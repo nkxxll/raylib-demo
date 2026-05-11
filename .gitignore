@@ -1,0 +1,7 @@
+compile_commands.json
+
+.zig-cache
+.zig-global-cache
+cpp-raylib/main
+zig-raylib/main
+.cache
