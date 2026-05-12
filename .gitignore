@@ -5,3 +5,5 @@ compile_commands.json
 cpp-raylib/main
 zig-raylib/main
 .cache
+zig-raylib/zig-out
+cpp-raylib/main.o

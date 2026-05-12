@@ -20,7 +20,7 @@ fn onClick(
     allocator: std.mem.Allocator,
     circles: *std.ArrayList(c.Vector2),
     velocities: *std.ArrayList(c.Vector2),
-    random: *std.Random,
+    random: *const std.Random,
 ) !void {
     if (c.IsMouseButtonPressed(c.MOUSE_BUTTON_LEFT)) {
         const mouse_pos = c.GetMousePosition();
@@ -132,27 +132,27 @@ fn detectCollision(circles: []c.Vector2, velocities: []c.Vector2) void {
     }
 }
 
-fn addRandomPlanets(
-    allocator: std.mem.Allocator,
-    planets: *std.ArrayList(Planet),
-    random: std.Random,
-) !void {
-    const count = 3 + random.uintLessThan(u32, 5);
-    const current_width = c.GetScreenWidth();
-    const current_height = c.GetScreenHeight();
+    fn addRandomPlanets(
+        allocator: std.mem.Allocator,
+        planets: *std.ArrayList(Planet),
+        random: std.Random,
+    ) !void {
+        const count = 3 + random.uintLessThan(u32, 5);
+        const current_width = width;
+        const current_height = height;
 
-    var i: u32 = 0;
-    while (i < count) : (i += 1) {
-        try planets.append(allocator, .{
-            .pos = .{
-                .x = @floatFromInt(random.uintLessThan(u32, @intCast(current_width - 90))),
-                .y = @floatFromInt(random.uintLessThan(u32, @intCast(current_height - 90))),
-            },
-            .gravity_const = @as(f32, @floatFromInt(random.uintLessThan(u32, 90))) / 100.0,
-            .range = 50.0 + @as(f32, @floatFromInt(random.uintLessThan(u32, 100))),
-        });
+        var i: u32 = 0;
+        while (i < count) : (i += 1) {
+            try planets.append(allocator, .{
+                .pos = .{
+                    .x = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_width - 90)))),
+                    .y = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_height - 90)))),
+                },
+                .gravity_const = @as(f32, @floatFromInt(random.uintLessThan(u32, 90))) / 100.0,
+                .range = 50.0 + @as(f32, @floatFromInt(random.uintLessThan(u32, 100))),
+            });
+        }
     }
-}
 
 fn friction(velocities: []c.Vector2) void {
     for (velocities) |*velocity| {
@@ -180,24 +180,21 @@ fn drawConnected(circles: []const c.Vector2) void {
 
 const Demo = struct {
     gpa: std.mem.Allocator,
-    prng: std.Random.DefaultPrng,
+    io: std.Io,
     circles: std.ArrayList(c.Vector2),
     velocities: std.ArrayList(c.Vector2),
     planets: std.ArrayList(Planet),
 
     const Self = @This();
-    pub fn init(gpa: std.mem.Allocator) !Self {
-        var prng = std.Random.DefaultPrng.init(@intCast(std.time.milliTimestamp()));
-        const random = prng.random();
-
+    pub fn init(gpa: std.mem.Allocator, io: std.Io) !Self {
         const circles = try std.ArrayList(c.Vector2).initCapacity(gpa, 16);
         const velocities = try std.ArrayList(c.Vector2).initCapacity(gpa, 16);
         var planets = try std.ArrayList(Planet).initCapacity(gpa, 5);
 
-        try addRandomPlanets(gpa, &planets, random);
+        try addRandomPlanets(gpa, &planets, (std.Random.IoSource{ .io = io }).interface());
         return Self{
             .gpa = gpa,
-            .prng = prng,
+            .io = io,
             .circles = circles,
             .velocities = velocities,
             .planets = planets,
@@ -205,8 +202,7 @@ const Demo = struct {
     }
 
     pub fn tick(self: *Self) !void {
-        var random = self.prng.random();
-        try onClick(self.gpa, &self.circles, &self.velocities, &random);
+        try onClick(self.gpa, &self.circles, &self.velocities, &(std.Random.IoSource{ .io = self.io }).interface());
         friction(self.velocities.items);
         applyGravity(self.circles.items, self.velocities.items, self.planets.items);
         detectCollision(self.circles.items, self.velocities.items);
@@ -247,9 +243,8 @@ const Choose = struct {
     pub fn tick(self: *Self) void {
         if (c.IsMouseButtonPressed(c.MOUSE_BUTTON_LEFT)) {
             const app_states = @typeInfo(AppState).@"enum".fields;
-            const number_app_states = app_states.len;
             const current_height = c.GetScreenHeight();
-            const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(number_app_states)));
+            const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(app_states.len)));
             const mouse_y = c.GetMouseY();
 
             inline for (app_states, 0..) |app_state, multiplier| {
@@ -264,15 +259,14 @@ const Choose = struct {
         }
     }
     pub fn draw() void {
-        const app_states = comptime @typeInfo(AppState).@"enum".fields;
-        const number_app_states = app_states.len;
+        const app_states = @typeInfo(AppState).@"enum".fields;
         const current_width = c.GetScreenWidth();
         const current_height = c.GetScreenHeight();
         var color_cycle_index: usize = 0;
         const colors = [5]c.Color{ c.RED, c.BLUE, c.GREEN, c.MAGENTA, c.PURPLE };
 
-        const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(number_app_states)));
-        for (app_states, 0..) |app_state, multiplier| {
+        const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(app_states.len)));
+        inline for (app_states, 0..) |app_state, multiplier| {
             const y = @as(i32, @intCast(multiplier)) * segment_height;
             const position = c.Vector2{
                 .x = 0.0,
@@ -297,10 +291,10 @@ const App = struct {
 
     const Self = @This();
 
-    pub fn init(gpa: std.mem.Allocator) !Self {
+    pub fn init(gpa: std.mem.Allocator, io: std.Io) !Self {
         const app_state = try gpa.create(AppState);
         app_state.* = .choose;
-        const demo = try Demo.init(gpa);
+        const demo = try Demo.init(gpa, io);
         const choose = Choose.init(app_state);
         return Self{
             .gpa = gpa,
@@ -345,12 +339,11 @@ const App = struct {
     }
 };
 
-pub fn main() !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer std.debug.assert(debug_allocator.deinit() == .ok);
-    const gpa = debug_allocator.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
 
-    var app = try App.init(gpa);
+    var app = try App.init(gpa, io);
     defer app.deinit();
 
     try app.loop();
