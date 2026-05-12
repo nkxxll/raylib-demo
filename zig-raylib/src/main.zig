@@ -132,27 +132,27 @@ fn detectCollision(circles: []c.Vector2, velocities: []c.Vector2) void {
     }
 }
 
-    fn addRandomPlanets(
-        allocator: std.mem.Allocator,
-        planets: *std.ArrayList(Planet),
-        random: std.Random,
-    ) !void {
-        const count = 3 + random.uintLessThan(u32, 5);
-        const current_width = width;
-        const current_height = height;
+fn addRandomPlanets(
+    allocator: std.mem.Allocator,
+    planets: *std.ArrayList(Planet),
+    random: std.Random,
+) !void {
+    const count = 3 + random.uintLessThan(u32, 5);
+    const current_width = width;
+    const current_height = height;
 
-        var i: u32 = 0;
-        while (i < count) : (i += 1) {
-            try planets.append(allocator, .{
-                .pos = .{
-                    .x = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_width - 90)))),
-                    .y = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_height - 90)))),
-                },
-                .gravity_const = @as(f32, @floatFromInt(random.uintLessThan(u32, 90))) / 100.0,
-                .range = 50.0 + @as(f32, @floatFromInt(random.uintLessThan(u32, 100))),
-            });
-        }
+    var i: u32 = 0;
+    while (i < count) : (i += 1) {
+        try planets.append(allocator, .{
+            .pos = .{
+                .x = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_width - 90)))),
+                .y = @floatFromInt(random.uintLessThan(u32, @intCast(@max(0, current_height - 90)))),
+            },
+            .gravity_const = @as(f32, @floatFromInt(random.uintLessThan(u32, 90))) / 100.0,
+            .range = 50.0 + @as(f32, @floatFromInt(random.uintLessThan(u32, 100))),
+        });
     }
+}
 
 fn friction(velocities: []c.Vector2) void {
     for (velocities) |*velocity| {
@@ -319,9 +319,9 @@ const App = struct {
     }
 
     pub fn loop(self: *Self) !void {
-        c.SetConfigFlags(c.FLAG_WINDOW_RESIZABLE); // Window configuration flags
+        c.InitWindow(1600, 900, "Mac Window");
 
-        c.InitWindow(width, height, "Application");
+        // c.SetWindowState(c.FLAG_WINDOW_RESIZABLE);
         defer c.CloseWindow();
         c.SetTargetFPS(60);
 
