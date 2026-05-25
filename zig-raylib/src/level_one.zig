@@ -1,25 +1,23 @@
 const AppState = @import("app_state.zig").AppState;
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("raylib.h");
-});
+const rl = @import("raylib.zig");
 
 gpa: std.mem.Allocator,
 app_state: *AppState,
-golf_ball: c.Vector2,
-golf_ball_velocity: c.Vector2,
-hole_pos: c.Vector2,
+golf_ball: rl.Vector2,
+golf_ball_velocity: rl.Vector2,
+hole_pos: rl.Vector2,
 width: usize,
 height: usize,
-drag_start_pos: ?c.Vector2,
+drag_start_pos: ?rl.Vector2,
 count: usize,
 
-const GOLF_BALL_COLOR = c.GRAY;
-const GOLF_BALL_RADIUS = 5;
+const GOLF_BALL_COLOR = rl.GRAY;
+const GOLF_BALL_RADIUS = 10;
 
-const HOLE_COLOR = c.BLACK;
-const HOLE_RADIUS = 3;
+const HOLE_COLOR = rl.BLACK;
+const HOLE_RADIUS = 10;
 
 const Self = @This();
 
@@ -27,7 +25,7 @@ inline fn float32FromUsize(integer: usize) f32 {
     return @as(f32, @floatFromInt(integer));
 }
 
-pub fn init(gpa: std.mem.Allocator, app_state: *AppState, width: c_int, height: c_int) Self {
+pub fn init(gpa: std.mem.Allocator, app_state: *AppState, width: i32, height: i32) Self {
     return Self{
         .gpa = gpa,
         .app_state = app_state,
@@ -43,8 +41,8 @@ pub fn init(gpa: std.mem.Allocator, app_state: *AppState, width: c_int, height: 
 
 pub fn tick(self: *Self) void {
     // if there is resizing in the future
-    self.width = @intCast(c.GetScreenWidth());
-    self.height = @intCast(c.GetScreenHeight());
+    self.width = @intCast(rl.GetScreenWidth());
+    self.height = @intCast(rl.GetScreenHeight());
 
     if (doCircleCollideV(self.hole_pos, HOLE_RADIUS, self.golf_ball, GOLF_BALL_RADIUS)) {
         self.app_state.* = .choose;
@@ -52,14 +50,14 @@ pub fn tick(self: *Self) void {
         self.count = 0;
     }
 
-    if (c.IsMouseButtonPressed(c.MOUSE_BUTTON_LEFT)) {
-        self.drag_start_pos = c.GetMousePosition();
+    if (rl.IsMouseButtonPressed(rl.MOUSE_BUTTON_LEFT)) {
+        self.drag_start_pos = rl.GetMousePosition();
     }
 
-    if (c.IsMouseButtonReleased(c.MOUSE_BUTTON_LEFT)) {
-        const mouse = c.GetMousePosition();
+    if (rl.IsMouseButtonReleased(rl.MOUSE_BUTTON_LEFT)) {
+        const mouse = rl.GetMousePosition();
         if (self.drag_start_pos) |drag| {
-            const v: c.Vector2 = .{ .x = drag.x - mouse.x, .y = drag.y - mouse.y };
+            const v: rl.Vector2 = .{ .x = drag.x - mouse.x, .y = drag.y - mouse.y };
             self.golf_ball_velocity = v;
             self.drag_start_pos = null;
             self.count += 1;
@@ -76,7 +74,7 @@ fn updateBallPosition(self: *Self) void {
     self.golf_ball.y += self.golf_ball_velocity.y;
 }
 
-fn doCircleCollideV(pos1: c.Vector2, radius1: f32, pos2: c.Vector2, radius2: f32) bool {
+fn doCircleCollideV(pos1: rl.Vector2, radius1: f32, pos2: rl.Vector2, radius2: f32) bool {
     const rad_squared = std.math.pow(f32, radius1 + radius2, 2);
     const length_squared = std.math.pow(f32, pos1.x - pos2.x, 2) + std.math.pow(f32, pos1.y - pos2.y, 2);
     return if (length_squared - rad_squared > 0) false else true;
@@ -98,18 +96,18 @@ fn wallCollision(self: *Self) void {
 }
 
 pub fn draw(self: Self) void {
-    c.ClearBackground(c.RAYWHITE);
+    rl.ClearBackground(rl.RAYWHITE);
     self.drawEntities();
     self.drawCount();
 }
 
 fn drawCount(self: Self) void {
-    c.DrawText(c.TextFormat("Count: %d", self.count), 10, 10, 10, c.BLACK);
+    rl.DrawText(rl.TextFormat("Count: %d", self.count), 10, 10, 10, rl.BLACK);
 }
 
 fn drawEntities(self: Self) void {
-    c.DrawCircleV(self.golf_ball, GOLF_BALL_RADIUS, GOLF_BALL_COLOR);
-    c.DrawCircleV(self.hole_pos, HOLE_RADIUS, HOLE_COLOR);
+    rl.DrawCircleV(self.golf_ball, GOLF_BALL_RADIUS, GOLF_BALL_COLOR);
+    rl.DrawCircleV(self.hole_pos, HOLE_RADIUS, HOLE_COLOR);
 }
 
 pub fn deinit(self: *Self) void {

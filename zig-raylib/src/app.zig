@@ -2,31 +2,29 @@ const std = @import("std");
 const AppState = @import("app_state.zig").AppState;
 const LevelOne = @import("level_one.zig");
 
-const c = @cImport({
-    @cInclude("raylib.h");
-});
+const rl = @import("raylib.zig");
 
-const circle_color = c.BLUE;
-const planet_color = c.RED;
+const circle_color = rl.BLUE;
+const planet_color = rl.RED;
 const radius: f32 = 20.0;
 const planet_radius: f32 = 5.0;
-const width: c_int = 1600;
-const height: c_int = 900;
+const width: i32 = 1600;
+const height: i32 = 900;
 
 const Planet = extern struct {
-    pos: c.Vector2,
+    pos: rl.Vector2,
     gravity_const: f32,
     range: f32,
 };
 
 fn onClick(
     allocator: std.mem.Allocator,
-    circles: *std.ArrayList(c.Vector2),
-    velocities: *std.ArrayList(c.Vector2),
+    circles: *std.ArrayList(rl.Vector2),
+    velocities: *std.ArrayList(rl.Vector2),
     random: *const std.Random,
 ) !void {
-    if (c.IsMouseButtonPressed(c.MOUSE_BUTTON_LEFT)) {
-        const mouse_pos = c.GetMousePosition();
+    if (rl.IsMouseButtonPressed(rl.MOUSE_BUTTON_LEFT)) {
+        const mouse_pos = rl.GetMousePosition();
         try circles.append(allocator, .{ .x = mouse_pos.x, .y = mouse_pos.y });
         try velocities.append(allocator, .{
             .x = @as(f32, @floatFromInt(random.uintLessThan(u32, 100))) / 100.0,
@@ -35,19 +33,19 @@ fn onClick(
     }
 }
 
-fn drawCircles(circles: []const c.Vector2, color: c.Color) void {
+fn drawCircles(circles: []const rl.Vector2, color: rl.Color) void {
     for (circles) |circle| {
-        c.DrawCircleV(circle, radius, color);
+        rl.DrawCircleV(circle, radius, color);
     }
 }
 
-fn drawPlanets(planets: []const Planet, color: c.Color) void {
+fn drawPlanets(planets: []const Planet, color: rl.Color) void {
     for (planets) |planet| {
-        c.DrawCircleV(planet.pos, planet_radius, color);
+        rl.DrawCircleV(planet.pos, planet_radius, color);
     }
 }
 
-fn inRange(a: c.Vector2, b: c.Vector2, rad_a: f32, rad_b: f32) bool {
+fn inRange(a: rl.Vector2, b: rl.Vector2, rad_a: f32, rad_b: f32) bool {
     const dist_x = a.x - b.x;
     const dist_y = a.y - b.y;
     const range_sum = rad_a + rad_b;
@@ -55,8 +53,8 @@ fn inRange(a: c.Vector2, b: c.Vector2, rad_a: f32, rad_b: f32) bool {
 }
 
 fn applyGravity(
-    circles: []const c.Vector2,
-    velocities: []c.Vector2,
+    circles: []const rl.Vector2,
+    velocities: []rl.Vector2,
     planets: []const Planet,
 ) void {
     for (circles, 0..) |circle, i| {
@@ -73,9 +71,9 @@ fn applyGravity(
     }
 }
 
-fn detectCollision(circles: []c.Vector2, velocities: []c.Vector2) void {
-    const current_width = c.GetScreenWidth();
-    const current_height = c.GetScreenHeight();
+fn detectCollision(circles: []rl.Vector2, velocities: []rl.Vector2) void {
+    const current_width = rl.GetScreenWidth();
+    const current_height = rl.GetScreenHeight();
     var i: usize = 0;
     while (i < circles.len) : (i += 1) {
         const circle = &circles[i];
@@ -94,11 +92,11 @@ fn detectCollision(circles: []c.Vector2, velocities: []c.Vector2) void {
             if (d < min_dist * min_dist) {
                 const length = @sqrt(d);
                 const normal = if (length > 0.0)
-                    c.Vector2{ .x = dx / length, .y = dy / length }
+                    rl.Vector2{ .x = dx / length, .y = dy / length }
                 else
-                    c.Vector2{ .x = 1.0, .y = 0.0 };
+                    rl.Vector2{ .x = 1.0, .y = 0.0 };
 
-                const rv = c.Vector2{
+                const rv = rl.Vector2{
                     .x = other_velocity.x - velocity.x,
                     .y = other_velocity.y - velocity.y,
                 };
@@ -108,7 +106,7 @@ fn detectCollision(circles: []c.Vector2, velocities: []c.Vector2) void {
 
                 const restitution: f32 = 1.0;
                 const impulse_magnitude = -(1.0 + restitution) * vel_along_normal / 2.0;
-                const impulse = c.Vector2{
+                const impulse = rl.Vector2{
                     .x = impulse_magnitude * normal.x,
                     .y = impulse_magnitude * normal.y,
                 };
@@ -157,26 +155,26 @@ fn addRandomPlanets(
     }
 }
 
-fn friction(velocities: []c.Vector2) void {
+fn friction(velocities: []rl.Vector2) void {
     for (velocities) |*velocity| {
         velocity.x *= 0.999;
         velocity.y *= 0.999;
     }
 }
 
-fn applyVelocity(circles: []c.Vector2, velocities: []const c.Vector2) void {
+fn applyVelocity(circles: []rl.Vector2, velocities: []const rl.Vector2) void {
     for (circles, velocities) |*circle, velocity| {
         circle.x += velocity.x;
         circle.y += velocity.y;
     }
 }
 
-fn drawConnected(circles: []const c.Vector2) void {
+fn drawConnected(circles: []const rl.Vector2) void {
     var i: usize = 0;
     while (i < circles.len) : (i += 1) {
         var j: usize = i;
         while (j < circles.len) : (j += 1) {
-            c.DrawLineV(circles[i], circles[j], c.BLUE);
+            rl.DrawLineV(circles[i], circles[j], rl.BLUE);
         }
     }
 }
@@ -191,11 +189,11 @@ const Choose = struct {
     }
 
     pub fn tick(self: *Self) void {
-        if (c.IsMouseButtonPressed(c.MOUSE_BUTTON_LEFT)) {
+        if (rl.IsMouseButtonPressed(rl.MOUSE_BUTTON_LEFT)) {
             const app_states = @typeInfo(AppState).@"enum".fields;
-            const current_height = c.GetScreenHeight();
-            const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(app_states.len)));
-            const mouse_y = c.GetMouseY();
+            const current_height = rl.GetScreenHeight();
+            const segment_height: i32 = @divTrunc(current_height, @as(i32, @intCast(app_states.len)));
+            const mouse_y = rl.GetMouseY();
 
             inline for (app_states, 0..) |app_state, multiplier| {
                 const top: i32 = @as(i32, @intCast(multiplier)) * segment_height;
@@ -210,24 +208,24 @@ const Choose = struct {
     }
     pub fn draw() void {
         const app_states = @typeInfo(AppState).@"enum".fields;
-        const current_width = c.GetScreenWidth();
-        const current_height = c.GetScreenHeight();
+        const current_width = rl.GetScreenWidth();
+        const current_height = rl.GetScreenHeight();
         var color_cycle_index: usize = 0;
-        const colors = [5]c.Color{ c.RED, c.BLUE, c.GREEN, c.MAGENTA, c.PURPLE };
+        const colors = [5]rl.Color{ rl.RED, rl.BLUE, rl.GREEN, rl.MAGENTA, rl.PURPLE };
 
-        const segment_height: i32 = @divTrunc(current_height, @as(c_int, @intCast(app_states.len)));
+        const segment_height: i32 = @divTrunc(current_height, @as(i32, @intCast(app_states.len)));
         inline for (app_states, 0..) |app_state, multiplier| {
             const y = @as(i32, @intCast(multiplier)) * segment_height;
-            const position = c.Vector2{
+            const position = rl.Vector2{
                 .x = 0.0,
                 .y = @floatFromInt(y),
             };
-            const size = c.Vector2{
+            const size = rl.Vector2{
                 .x = @floatFromInt(current_width),
                 .y = @floatFromInt(segment_height),
             };
-            c.DrawRectangleV(position, size, colors[color_cycle_index]);
-            c.DrawText(app_state.name, 10, y + 5, 10, c.WHITE);
+            rl.DrawRectangleV(position, size, colors[color_cycle_index]);
+            rl.DrawText(app_state.name, 10, y + 5, 10, rl.WHITE);
             color_cycle_index = (color_cycle_index + 1) % colors.len;
         }
     }
@@ -236,14 +234,14 @@ const Choose = struct {
 const Demo = struct {
     gpa: std.mem.Allocator,
     io: std.Io,
-    circles: std.ArrayList(c.Vector2),
-    velocities: std.ArrayList(c.Vector2),
+    circles: std.ArrayList(rl.Vector2),
+    velocities: std.ArrayList(rl.Vector2),
     planets: std.ArrayList(Planet),
 
     const Self = @This();
     pub fn init(gpa: std.mem.Allocator, io: std.Io) !Self {
-        const circles = try std.ArrayList(c.Vector2).initCapacity(gpa, 16);
-        const velocities = try std.ArrayList(c.Vector2).initCapacity(gpa, 16);
+        const circles = try std.ArrayList(rl.Vector2).initCapacity(gpa, 16);
+        const velocities = try std.ArrayList(rl.Vector2).initCapacity(gpa, 16);
         var planets = try std.ArrayList(Planet).initCapacity(gpa, 5);
 
         try addRandomPlanets(gpa, &planets, (std.Random.IoSource{ .io = io }).interface());
@@ -265,7 +263,7 @@ const Demo = struct {
     }
 
     pub fn draw(self: Self) void {
-        c.ClearBackground(c.RAYWHITE);
+        rl.ClearBackground(rl.RAYWHITE);
         drawCircles(self.circles.items, circle_color);
         drawPlanets(self.planets.items, planet_color);
         drawConnected(self.circles.items);
@@ -319,19 +317,19 @@ pub const App = struct {
     }
 
     pub fn loop(self: *Self) !void {
-        c.InitWindow(width, height, "Application");
+        rl.InitWindow(width, height, "Application");
 
         // optional safety: force maximize again
 
-        // c.SetWindowState(c.FLAG_WINDOW_RESIZABLE);
-        defer c.CloseWindow();
-        c.SetTargetFPS(60);
+        // rl.SetWindowState(rl.FLAG_WINDOW_RESIZABLE);
+        defer rl.CloseWindow();
+        rl.SetTargetFPS(60);
 
-        while (!c.WindowShouldClose()) {
+        while (!rl.WindowShouldClose()) {
             try self.tick();
-            c.BeginDrawing();
+            rl.BeginDrawing();
             self.draw();
-            c.EndDrawing();
+            rl.EndDrawing();
         }
     }
 
