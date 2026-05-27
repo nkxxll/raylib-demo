@@ -5,34 +5,43 @@ const rl = @import("raylib.zig");
 
 gpa: std.mem.Allocator,
 app_state: *AppState,
+ball_start: rl.Vector2,
 golf_ball: rl.Vector2,
 golf_ball_velocity: rl.Vector2,
 hole_pos: rl.Vector2,
-width: usize,
-height: usize,
+width: i32,
+height: i32,
 drag_start_pos: ?rl.Vector2,
 count: usize,
+golf_radius: f32,
+hole_radius: f32,
 
 const GOLF_BALL_COLOR = rl.GRAY;
-const GOLF_BALL_RADIUS = 10;
 
-const HOLE_COLOR = rl.BLACK;
-const HOLE_RADIUS = 10;
+const HOLE_COLOR = rl.BLUE;
 
 const Self = @This();
 
-inline fn float32FromUsize(integer: usize) f32 {
-    return @as(f32, @floatFromInt(integer));
-}
-
-pub fn init(gpa: std.mem.Allocator, app_state: *AppState, width: i32, height: i32) Self {
+pub fn init(
+    gpa: std.mem.Allocator,
+    app_state: *AppState,
+    width: i32,
+    height: i32,
+    ball: rl.Vector2,
+    hole: rl.Vector2,
+    ball_radius: f32,
+    hole_radius: f32,
+) Self {
     return Self{
         .gpa = gpa,
         .app_state = app_state,
-        .golf_ball = .{ .x = float32FromUsize(@intCast(width)) / 3, .y = float32FromUsize(@intCast(height)) / 2 },
-        .hole_pos = .{ .x = (float32FromUsize(@intCast(width)) / 3) * 2, .y = float32FromUsize(@intCast(height)) / 2 },
-        .width = @intCast(width),
-        .height = @intCast(height),
+        .golf_ball = ball,
+        .ball_start = ball,
+        .golf_radius = ball_radius,
+        .hole_pos = hole,
+        .hole_radius = hole_radius,
+        .width = width,
+        .height = height,
         .golf_ball_velocity = .{ .x = 0, .y = 0 },
         .drag_start_pos = null,
         .count = 0,
@@ -44,9 +53,9 @@ pub fn tick(self: *Self) void {
     self.width = @intCast(rl.GetScreenWidth());
     self.height = @intCast(rl.GetScreenHeight());
 
-    if (doCircleCollideV(self.hole_pos, HOLE_RADIUS, self.golf_ball, GOLF_BALL_RADIUS)) {
+    if (doCircleCollideV(self.hole_pos, self.hole_radius, self.golf_ball, self.golf_radius)) {
         self.app_state.* = .choose;
-        self.golf_ball = .{ .x = float32FromUsize(self.width) / 3, .y = float32FromUsize(self.height) / 2 };
+        self.golf_ball = self.ball_start;
         self.count = 0;
     }
 
@@ -81,16 +90,16 @@ fn doCircleCollideV(pos1: rl.Vector2, radius1: f32, pos2: rl.Vector2, radius2: f
 }
 
 fn wallCollision(self: *Self) void {
-    if (self.golf_ball.x + GOLF_BALL_RADIUS >= @as(f32, @floatFromInt(self.width)) and self.golf_ball_velocity.x > 0) {
+    if (self.golf_ball.x + self.golf_radius >= @as(f32, @floatFromInt(self.width)) and self.golf_ball_velocity.x > 0) {
         self.golf_ball_velocity.x *= -1;
     }
-    if (self.golf_ball.x - GOLF_BALL_RADIUS <= 0 and self.golf_ball_velocity.x < 0) {
+    if (self.golf_ball.x - self.golf_radius <= 0 and self.golf_ball_velocity.x < 0) {
         self.golf_ball_velocity.x *= -1;
     }
-    if (self.golf_ball.y + GOLF_BALL_RADIUS >= @as(f32, @floatFromInt(self.height)) and self.golf_ball_velocity.y > 0) {
+    if (self.golf_ball.y + self.golf_radius >= @as(f32, @floatFromInt(self.height)) and self.golf_ball_velocity.y > 0) {
         self.golf_ball_velocity.y *= -1;
     }
-    if (self.golf_ball.y - GOLF_BALL_RADIUS <= 0 and self.golf_ball_velocity.y < 0) {
+    if (self.golf_ball.y - self.golf_radius <= 0 and self.golf_ball_velocity.y < 0) {
         self.golf_ball_velocity.y *= -1;
     }
 }
@@ -99,15 +108,21 @@ pub fn draw(self: Self) void {
     rl.ClearBackground(rl.RAYWHITE);
     self.drawEntities();
     self.drawCount();
+    Self.drawFPS();
 }
 
 fn drawCount(self: Self) void {
     rl.DrawText(rl.TextFormat("Count: %d", self.count), 10, 10, 10, rl.BLACK);
 }
 
+fn drawFPS() void {
+    const fps = rl.GetFPS();
+    rl.DrawText(rl.TextFormat("Fps: %d", fps), 10, 25, 10, rl.BLACK);
+}
+
 fn drawEntities(self: Self) void {
-    rl.DrawCircleV(self.golf_ball, GOLF_BALL_RADIUS, GOLF_BALL_COLOR);
-    rl.DrawCircleV(self.hole_pos, HOLE_RADIUS, HOLE_COLOR);
+    rl.DrawCircleV(self.golf_ball, self.golf_radius, GOLF_BALL_COLOR);
+    rl.DrawCircleV(self.hole_pos, self.hole_radius, HOLE_COLOR);
 }
 
 pub fn deinit(self: *Self) void {

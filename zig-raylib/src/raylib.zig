@@ -2,8 +2,8 @@ const c = @cImport({
     @cInclude("raylib.h");
 });
 
-pub const Vec2 = c.Vector2;
 pub const Vector2 = c.Vector2;
+pub const Rectangle = c.Rectangle;
 pub const Color = c.Color;
 pub const MouseButton = c.MouseButton;
 
@@ -31,9 +31,14 @@ pub const IsMouseButtonPressed = c.IsMouseButtonPressed;
 pub const IsMouseButtonReleased = c.IsMouseButtonReleased;
 pub const TextFormat = c.TextFormat;
 pub const WindowShouldClose = c.WindowShouldClose;
+pub const GetFPS = c.GetFPS;
 
 pub fn DrawText(text: [*:0]const u8, pos_x: i32, pos_y: i32, font_size: i32, color: Color) void {
     c.DrawText(text, @intCast(pos_x), @intCast(pos_y), @intCast(font_size), color);
+}
+
+pub fn CheckCollisionCircleRec(center: Vector2, radius: f32, rec: Rectangle) bool {
+    return c.CheckCollisionCircleRec(center, radius, rec);
 }
 
 pub fn GetMouseX() i32 {

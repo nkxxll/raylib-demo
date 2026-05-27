@@ -1,6 +1,7 @@
 const std = @import("std");
 const AppState = @import("app_state.zig").AppState;
-const LevelOne = @import("level_one.zig");
+const LevelOne = @import("base_level.zig");
+const LevelTwo = @import("level_two.zig");
 
 const rl = @import("raylib.zig");
 
@@ -280,7 +281,8 @@ pub const App = struct {
     gpa: std.mem.Allocator,
     demo: Demo,
     choose: Choose,
-    level_one: LevelOne,
+    base_level: LevelOne,
+    level_two: LevelTwo,
     app_state: *AppState,
 
     const Self = @This();
@@ -290,13 +292,21 @@ pub const App = struct {
         app_state.* = .choose;
         const demo = try Demo.init(gpa, io);
         const choose = Choose.init(app_state);
-        const level_one = LevelOne.init(gpa, app_state, width, height);
+        const base_level = LevelOne.init(gpa, app_state, width, height, .{
+            .x = @as(f32, @floatFromInt(width)) / 4.0,
+            .y = @as(f32, @floatFromInt(height)) / 2.0,
+        }, .{
+            .x = @as(f32, @floatFromInt(width)) / 4.0 * 3.0,
+            .y = @as(f32, @floatFromInt(height)) / 2.0,
+        }, 20, 20);
+        const level_two = LevelTwo.init(gpa, io, app_state, width, height);
         return Self{
             .gpa = gpa,
             .demo = demo,
             .choose = choose,
             .app_state = app_state,
-            .level_one = level_one,
+            .base_level = base_level,
+            .level_two = level_two,
         };
     }
 
@@ -304,7 +314,8 @@ pub const App = struct {
         switch (self.app_state.*) {
             .choose => self.choose.tick(),
             .demo => try self.demo.tick(),
-            .level_one => self.level_one.tick(),
+            .base_level => self.base_level.tick(),
+            .level_two => self.level_two.tick(),
         }
     }
 
@@ -312,7 +323,8 @@ pub const App = struct {
         switch (self.app_state.*) {
             .choose => Choose.draw(),
             .demo => self.demo.draw(),
-            .level_one => self.level_one.draw(),
+            .base_level => self.base_level.draw(),
+            .level_two => self.level_two.draw(),
         }
     }
 
@@ -336,5 +348,6 @@ pub const App = struct {
     pub fn deinit(self: *Self) void {
         self.demo.deinit();
         self.gpa.destroy(self.app_state);
+        self.level_two.deinit();
     }
 };

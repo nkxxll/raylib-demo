@@ -1,5 +1,6 @@
 pub const AppState = enum {
     choose,
     demo,
-    level_one,
+    base_level,
+    level_two,
 };
