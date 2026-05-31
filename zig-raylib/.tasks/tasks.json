@@ -1,0 +1,6 @@
+[
+    {
+        "label": "test local",
+        "command": "echo 'test local'"
+    }
+]

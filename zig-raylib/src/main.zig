@@ -1,7 +1,6 @@
 const std = @import("std");
 const App = @import("app.zig").App;
 
-
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const io = init.io;

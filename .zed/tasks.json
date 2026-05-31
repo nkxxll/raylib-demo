@@ -1,0 +1,19 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "Zig: build run",
+    "command": "cd zig-raylib && zig build run",
+    "shell": {
+      "program": "fish"
+    },
+  },
+  {
+    "label": "Zig: build",
+    "command": "cd zig-raylib && zig build",
+    "shell": {
+      "program": "fish"
+    },
+  },
+]

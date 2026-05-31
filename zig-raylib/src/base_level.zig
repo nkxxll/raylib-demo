@@ -89,6 +89,8 @@ fn doCircleCollideV(pos1: rl.Vector2, radius1: f32, pos2: rl.Vector2, radius2: f
     return if (length_squared - rad_squared > 0) false else true;
 }
 
+// todo: the collision logic needs to be fixed a bit here haha need to see where the ball is going to go
+// then I have to update the next position of the ball
 fn wallCollision(self: *Self) void {
     if (self.golf_ball.x + self.golf_radius >= @as(f32, @floatFromInt(self.width)) and self.golf_ball_velocity.x > 0) {
         self.golf_ball_velocity.x *= -1;
