@@ -1,7 +1,6 @@
 const std = @import("std");
 const AppState = @import("app_state.zig").AppState;
-const LevelOne = @import("base_level.zig");
-const LevelTwo = @import("level_two.zig");
+const BaseLevel = @import("base_level.zig");
 
 const rl = @import("raylib.zig");
 
@@ -281,8 +280,8 @@ pub const App = struct {
     gpa: std.mem.Allocator,
     demo: Demo,
     choose: Choose,
-    base_level: LevelOne,
-    level_two: LevelTwo,
+    base_level: BaseLevel,
+    level_two: BaseLevel,
     app_state: *AppState,
 
     const Self = @This();
@@ -292,14 +291,8 @@ pub const App = struct {
         app_state.* = .choose;
         const demo = try Demo.init(gpa, io);
         const choose = Choose.init(app_state);
-        const base_level = LevelOne.init(gpa, app_state, width, height, .{
-            .x = @as(f32, @floatFromInt(width)) / 4.0,
-            .y = @as(f32, @floatFromInt(height)) / 2.0,
-        }, .{
-            .x = @as(f32, @floatFromInt(width)) / 4.0 * 3.0,
-            .y = @as(f32, @floatFromInt(height)) / 2.0,
-        }, 20, 20);
-        const level_two = LevelTwo.init(gpa, io, app_state, width, height);
+        const base_level = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_one.txt");
+        const level_two = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_two.txt");
         return Self{
             .gpa = gpa,
             .demo = demo,

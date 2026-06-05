@@ -3,6 +3,11 @@ const c = @cImport({
 });
 
 pub const Vector2 = c.Vector2;
+
+pub fn Vector2LengthSquared(self: Vector2) f32 {
+    return self.x * self.x + self.y * self.y;
+}
+
 pub const Rectangle = c.Rectangle;
 pub const Color = c.Color;
 pub const MouseButton = c.MouseButton;
