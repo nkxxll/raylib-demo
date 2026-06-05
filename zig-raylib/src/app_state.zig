@@ -3,4 +3,5 @@ pub const AppState = enum {
     demo,
     base_level,
     level_two,
+    level_three,
 };

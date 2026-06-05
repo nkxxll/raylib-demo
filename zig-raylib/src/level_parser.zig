@@ -6,12 +6,14 @@ const Field = enum {
     ball,
     hole,
     obstacle,
+    worm_hole,
 };
 
 const ParseLevelError = error{
     NoBallFound,
     NoHoleFound,
     OutOfMemory,
+    WrongNumberOfWormHole,
 };
 
 const WIDTH = 64;
@@ -26,19 +28,26 @@ gpa: std.mem.Allocator,
 io: std.Io,
 level_file: []const u8,
 
+pub const WormHoles = struct {
+    entry: rl.Vector2,
+    exit: rl.Vector2,
+};
+
 pub const Level = struct {
     ball: rl.Vector2,
     hole: rl.Vector2,
     obstacles: []rl.Vector2,
+    worm_holes: ?WormHoles,
     gpa: std.mem.Allocator,
 
-    pub fn init(gpa: std.mem.Allocator, ball: rl.Vector2, hole: rl.Vector2, obstacles: []const rl.Vector2) !Level {
+    pub fn init(gpa: std.mem.Allocator, ball: rl.Vector2, hole: rl.Vector2, obstacles: []const rl.Vector2, worm_holes: ?WormHoles) !Level {
         const obs = try gpa.dupe(rl.Vector2, obstacles);
         return Level{
             .ball = ball,
             .hole = hole,
             .obstacles = obs,
             .gpa = gpa,
+            .worm_holes = worm_holes,
         };
     }
 
@@ -83,6 +92,10 @@ fn readFile(self: *const Self, level_file: []const u8) ![]const Field {
                 level[index] = Field.ball;
                 index += 1;
             },
+            'o' => {
+                level[index] = Field.worm_hole;
+                index += 1;
+            },
             '\n' => continue,
             else => |other| {
                 std.debug.print("Char: {c}", .{other});
@@ -91,6 +104,29 @@ fn readFile(self: *const Self, level_file: []const u8) ![]const Field {
         }
     }
     return level;
+}
+
+fn findWormHoles(self: *const Self, level: []const Field) ?WormHoles {
+    var entry: ?rl.Vector2 = null;
+    var exit: ?rl.Vector2 = null;
+    for (level, 0..) |f, i| {
+        switch (f) {
+            .worm_hole => {
+                if (entry == null) {
+                    entry = Self.translateIndexToWindowPos(i, self.window_width, self.window_height, false);
+                } else if (exit == null) {
+                    exit = Self.translateIndexToWindowPos(i, self.window_width, self.window_height, false);
+                } else {
+                    return null;
+                }
+            },
+            else => continue,
+        }
+    }
+    if (entry == null or exit == null) {
+        return null;
+    }
+    return WormHoles{ .entry = entry.?, .exit = exit.? };
 }
 
 fn findObstacles(self: *const Self, level: []const Field) ![]const rl.Vector2 {
@@ -176,6 +212,12 @@ pub fn parseLevel(self: *const Self) ParseLevelError!Level {
     const obstacles = try self.findObstacles(board);
     defer self.gpa.free(obstacles);
     const hole = try self.findHolePos(board);
-    const level = try Level.init(self.gpa, ball, hole, obstacles);
+    var worm: ?WormHoles = null;
+    if (self.findWormHoles(board)) |w| {
+        worm = w;
+    } else {
+        std.debug.print("The level file contains more than 2 worm holes or less than one but only 2 are allowed! The worm holes will be ignored.", .{});
+    }
+    const level = try Level.init(self.gpa, ball, hole, obstacles, worm);
     return level;
 }

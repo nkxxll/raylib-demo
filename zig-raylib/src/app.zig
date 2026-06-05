@@ -282,6 +282,7 @@ pub const App = struct {
     choose: Choose,
     base_level: BaseLevel,
     level_two: BaseLevel,
+    level_three: BaseLevel,
     app_state: *AppState,
 
     const Self = @This();
@@ -293,6 +294,7 @@ pub const App = struct {
         const choose = Choose.init(app_state);
         const base_level = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_one.txt");
         const level_two = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_two.txt");
+        const level_three = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_three.txt");
         return Self{
             .gpa = gpa,
             .demo = demo,
@@ -300,6 +302,7 @@ pub const App = struct {
             .app_state = app_state,
             .base_level = base_level,
             .level_two = level_two,
+            .level_three = level_three,
         };
     }
 
@@ -309,6 +312,7 @@ pub const App = struct {
             .demo => try self.demo.tick(),
             .base_level => self.base_level.tick(),
             .level_two => self.level_two.tick(),
+            .level_three => self.level_three.tick(),
         }
     }
 
@@ -318,6 +322,7 @@ pub const App = struct {
             .demo => self.demo.draw(),
             .base_level => self.base_level.draw(),
             .level_two => self.level_two.draw(),
+            .level_three => self.level_three.draw(),
         }
     }
 
@@ -342,5 +347,6 @@ pub const App = struct {
         self.demo.deinit();
         self.gpa.destroy(self.app_state);
         self.level_two.deinit();
+        self.level_three.deinit();
     }
 };
