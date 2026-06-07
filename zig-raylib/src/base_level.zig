@@ -166,17 +166,30 @@ pub fn tickSubstep(self: *Self, velocity: rl.Vector2) rl.Vector2 {
 }
 
 fn wormHoleJump(self: *Self, velocity: rl.Vector2) void {
+    _ = velocity;
     if (self.worm_holes) |wh| {
         if (!self.worm_hole_jump) {
             if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.entry, self.worm_hole_radius)) {
-                self.golf_ball = rl.Vector2Add(wh.exit, velocity);
+                self.golf_ball = wh.exit;
                 self.worm_hole_jump = true;
+                return;
             }
             if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius)) {
-                self.golf_ball = rl.Vector2Add(wh.entry, velocity);
+                self.golf_ball = wh.entry;
                 self.worm_hole_jump = true;
+                return;
             }
-        } else if (!rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius) and self.worm_hole_jump){
+        } else if (!rl.CheckCollisionCircles(
+            self.golf_ball,
+            self.golf_radius,
+            wh.entry,
+            self.worm_hole_radius,
+        ) and !rl.CheckCollisionCircles(
+            self.golf_ball,
+            self.golf_radius,
+            wh.exit,
+            self.worm_hole_radius,
+        )) {
             self.worm_hole_jump = false;
         }
     }
@@ -224,11 +237,11 @@ fn wallCollision(self: *Self, velocity: rl.Vector2) rl.Vector2 {
 
 pub fn draw(self: *const Self) void {
     rl.ClearBackground(rl.RAYWHITE);
-    self.drawEntities();
+    self.drawWormHoles();
     self.drawCount();
     Self.drawFPS();
     self.drawObstacles();
-    self.drawWormHoles();
+    self.drawEntities();
 }
 
 fn drawWormHoles(self: *const Self) void {
