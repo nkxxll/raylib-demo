@@ -22,6 +22,7 @@ cell_width: f32,
 cell_height: f32,
 worm_holes: ?WormHoles,
 worm_hole_radius: f32,
+worm_hole_jump: bool,
 
 const GOLF_BALL_COLOR = rl.GRAY;
 const SAMPLE_SIZE = 10.0;
@@ -66,6 +67,7 @@ pub fn init(
         .count = 0,
         .worm_holes = level.worm_holes,
         .worm_hole_radius = cell_width / 2 - 4,
+        .worm_hole_jump = false,
     };
 }
 
@@ -165,11 +167,17 @@ pub fn tickSubstep(self: *Self, velocity: rl.Vector2) rl.Vector2 {
 
 fn wormHoleJump(self: *Self, velocity: rl.Vector2) void {
     if (self.worm_holes) |wh| {
-        if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.entry, self.worm_hole_radius)) {
-            self.golf_ball = rl.Vector2Add(wh.exit, velocity);
-        }
-        if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius)) {
-            self.golf_ball = rl.Vector2Add(wh.entry, velocity);
+        if (!self.worm_hole_jump) {
+            if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.entry, self.worm_hole_radius)) {
+                self.golf_ball = rl.Vector2Add(wh.exit, velocity);
+                self.worm_hole_jump = true;
+            }
+            if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius)) {
+                self.golf_ball = rl.Vector2Add(wh.entry, velocity);
+                self.worm_hole_jump = true;
+            }
+        } else if (!rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius) and self.worm_hole_jump){
+            self.worm_hole_jump = false;
         }
     }
 }

@@ -8,8 +8,8 @@ const circle_color = rl.BLUE;
 const planet_color = rl.RED;
 const radius: f32 = 20.0;
 const planet_radius: f32 = 5.0;
-const width: i32 = 1600;
-const height: i32 = 900;
+const WIDTH: i32 = 1600;
+const HEIGHT: i32 = 900;
 
 const Planet = extern struct {
     pos: rl.Vector2,
@@ -139,8 +139,8 @@ fn addRandomPlanets(
     random: std.Random,
 ) !void {
     const count = 3 + random.uintLessThan(u32, 5);
-    const current_width = width;
-    const current_height = height;
+    const current_width = WIDTH;
+    const current_height = HEIGHT;
 
     var i: u32 = 0;
     while (i < count) : (i += 1) {
@@ -292,9 +292,9 @@ pub const App = struct {
         app_state.* = .choose;
         const demo = try Demo.init(gpa, io);
         const choose = Choose.init(app_state);
-        const base_level = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_one.txt");
-        const level_two = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_two.txt");
-        const level_three = BaseLevel.init(gpa, io, app_state, width, height, "./levels/level_three.txt");
+        const base_level = BaseLevel.init(gpa, io, app_state, WIDTH, HEIGHT, "./levels/level_one.txt");
+        const level_two = BaseLevel.init(gpa, io, app_state, WIDTH, HEIGHT, "./levels/level_two.txt");
+        const level_three = BaseLevel.init(gpa, io, app_state, WIDTH, HEIGHT, "./levels/level_three.txt");
         return Self{
             .gpa = gpa,
             .demo = demo,
@@ -327,7 +327,7 @@ pub const App = struct {
     }
 
     pub fn loop(self: *Self) !void {
-        rl.InitWindow(width, height, "Application");
+        rl.InitWindow(WIDTH, HEIGHT, "Application");
 
         // optional safety: force maximize again
 
