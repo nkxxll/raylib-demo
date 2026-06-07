@@ -67,7 +67,7 @@ pub fn GetScreenWidth() i32 {
     return @intCast(c.GetScreenWidth());
 }
 
-pub fn InitWindow(width: i32, height: i32, title: [*:0]const u8) void {
+pub fn InitWindow(width: i32, height: i32, title: [*c]const u8) void {
     c.InitWindow(@intCast(width), @intCast(height), title);
 }
 

@@ -59,6 +59,7 @@ pub fn build(b: *std.Build) void {
     // don't need and to put everything under a single module.
     const exe = b.addExecutable(.{
         .name = "zig_raylib",
+        .use_llvm = true,
         .root_module = b.createModule(.{
             // b.createModule defines a new module just like b.addModule but,
             // unlike b.addModule, it does not expose the module to consumers of
@@ -72,6 +73,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             // List of modules available for import in source files part of the
             // root module.
+            .link_libc = true,
             .imports = &.{
                 // Here "zig_raylib" is the name you will use in your source code to
                 // import this module (e.g. `@import("zig_raylib")`). The name is
