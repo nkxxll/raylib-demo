@@ -37,9 +37,14 @@ pub const IsMouseButtonReleased = c.IsMouseButtonReleased;
 pub const TextFormat = c.TextFormat;
 pub const WindowShouldClose = c.WindowShouldClose;
 pub const GetFPS = c.GetFPS;
+pub const CheckCollisionCircles = c.CheckCollisionCircles;
 
 pub fn DrawText(text: [*:0]const u8, pos_x: i32, pos_y: i32, font_size: i32, color: Color) void {
     c.DrawText(text, @intCast(pos_x), @intCast(pos_y), @intCast(font_size), color);
+}
+
+pub fn Vector2Add(first: Vector2, second: Vector2) Vector2 {
+    return Vector2{ .x = first.x + second.x, .y = first.y + second.y };
 }
 
 pub fn CheckCollisionCircleRec(center: Vector2, radius: f32, rec: Rectangle) bool {

@@ -1,9 +1,9 @@
 const AppState = @import("app_state.zig").AppState;
 const LevelParser = @import("level_parser.zig");
 const std = @import("std");
+const WormHoles = @import("level_parser.zig").WormHoles;
 
 const rl = @import("raylib.zig");
-const CELL_WIDTH = 64;
 
 gpa: std.mem.Allocator,
 app_state: *AppState,
@@ -20,9 +20,12 @@ hole_radius: f32,
 obstacles: []rl.Vector2,
 cell_width: f32,
 cell_height: f32,
+worm_holes: ?WormHoles,
+worm_hole_radius: f32,
 
 const GOLF_BALL_COLOR = rl.GRAY;
 const SAMPLE_SIZE = 10.0;
+const WORM_HOLE_COLOR = rl.PURPLE;
 
 const HOLE_COLOR = rl.BLUE;
 
@@ -61,6 +64,8 @@ pub fn init(
         .drag_start_pos = null,
         .obstacles = level.obstacles,
         .count = 0,
+        .worm_holes = level.worm_holes,
+        .worm_hole_radius = cell_width / 2 - 4,
     };
 }
 
@@ -152,9 +157,21 @@ pub fn beginTick(self: *Self) void {
 pub fn tickSubstep(self: *Self, velocity: rl.Vector2) rl.Vector2 {
     var v = velocity;
     self.updateBallPosition(v);
+    self.wormHoleJump(v);
     v = self.wallCollision(v);
     v = self.obstacleCollision(v);
     return v;
+}
+
+fn wormHoleJump(self: *Self, velocity: rl.Vector2) void {
+    if (self.worm_holes) |wh| {
+        if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.entry, self.worm_hole_radius)) {
+            self.golf_ball = rl.Vector2Add(wh.exit, velocity);
+        }
+        if (rl.CheckCollisionCircles(self.golf_ball, self.golf_radius, wh.exit, self.worm_hole_radius)) {
+            self.golf_ball = rl.Vector2Add(wh.entry, velocity);
+        }
+    }
 }
 
 pub fn endTick(self: *Self) void {
@@ -203,6 +220,14 @@ pub fn draw(self: *const Self) void {
     self.drawCount();
     Self.drawFPS();
     self.drawObstacles();
+    self.drawWormHoles();
+}
+
+fn drawWormHoles(self: *const Self) void {
+    if (self.worm_holes) |wh| {
+        rl.DrawCircleV(wh.entry, self.worm_hole_radius, WORM_HOLE_COLOR);
+        rl.DrawCircleV(wh.exit, self.worm_hole_radius, WORM_HOLE_COLOR);
+    }
 }
 
 fn drawObstacles(self: *const Self) void {
